@@ -1,18 +1,55 @@
 #!/bin/bash
-set -e  # 遇到错误立即退出
 
 # 克隆指定版本的内核源码
-git clone https://github.com/GengWei1997/linux.git --branch raphael-$1 --depth 1 linux
+echo "正在克隆内核源码..."
+git clone https://github.com/GengWei1997/linux.git --branch raphael-$1 --depth 1 linux || {
+  echo "错误: 克隆内核源码失败"
+  exit 1
+}
 cd linux
 
 # 下载内核配置文件
-wget -P arch/arm64/configs https://raw.githubusercontent.com/GengWei1997/kernel-deb/refs/heads/main/raphael.config
+echo "正在下载内核配置文件..."
+wget -P arch/arm64/configs https://raw.githubusercontent.com/GengWei1997/kernel-deb/refs/heads/main/raphael.config || {
+  echo "错误: 下载配置文件失败"
+  exit 1
+}
 
 # 生成内核配置
-make -j$(nproc) ARCH=arm64 LLVM=1 defconfig raphael.config
+echo "正在生成内核配置..."
+make -j$(nproc) ARCH=arm64 LLVM=1 defconfig raphael.config || {
+  echo "错误: 内核配置生成失败"
+  echo "检查配置文件内容:"
+  cat arch/arm64/configs/raphael.config | head -50
+  exit 1
+}
 
 # 编译内核
-make -j$(nproc) ARCH=arm64 LLVM=1
+echo "正在编译内核..."
+echo "编译参数: ARCH=arm64 LLVM=1 CC=clang LD=ld.lld"
+echo "开始时间: $(date)"
+
+# 使用 time 命令统计编译时间
+{
+  time make -j$(nproc) ARCH=arm64 LLVM=1 CC=clang LD=ld.lld 2>&1 | tee compile.log
+} || {
+  echo "错误: 内核编译失败"
+  echo "显示最后100行编译日志:"
+  tail -100 compile.log
+  echo ""
+  echo "检查编译环境:"
+  which clang ld.lld
+  clang --version | head -3
+  ld.lld --version | head -3
+  echo ""
+  echo "检查系统资源:"
+  free -h
+  df -h
+  exit 1
+}
+
+echo "结束时间: $(date)"
+echo "编译成功完成！"
 
 # 获取内核版本号
 _kernel_version="$(make kernelrelease -s)"
