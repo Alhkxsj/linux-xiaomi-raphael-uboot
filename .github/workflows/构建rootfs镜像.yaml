@@ -80,53 +80,81 @@ jobs:
           # 从 Release 下载指定版本的内核包
           mkdir -p xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}
           
-          echo "正在下载内核包 (版本: ${{ env.KERNEL_VERSION }})..."
+          echo "=========================================="
+          echo "下载内核包"
+          echo "=========================================="
+          echo "版本: ${{ env.KERNEL_VERSION }}"
           echo "系统类型: ${{ env.SYSTEM_TYPE }}"
+          echo ""
           
           # 根据系统类型下载对应格式的内核包
           if [[ "${{ env.SYSTEM_TYPE }}" == "arch-desktop" ]]; then
             # Arch Linux 使用 .pkg.tar.zst 格式
-            # 下载内核包（使用通配符匹配版本号）
-            curl -L -o xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/linux-xiaomi-raphael.pkg.tar.zst \
-              "https://github.com/${{ github.repository }}/releases/download/kernel-v${{ env.KERNEL_VERSION }}/linux-xiaomi-raphael-${{ env.KERNEL_VERSION }}-1-aarch64.pkg.tar.zst" || echo "下载 linux-xiaomi-raphael.pkg.tar.zst 失败，可能 Release 不存在"
+            echo "下载 Arch Linux 格式内核包..."
+            
+            # 下载内核包
+            echo "正在下载: linux-xiaomi-raphael-${{ env.KERNEL_VERSION }}-1-aarch64.pkg.tar.zst"
+            curl -L -f -o xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/linux-xiaomi-raphael-${{ env.KERNEL_VERSION }}-1-aarch64.pkg.tar.zst \
+              "https://github.com/${{ github.repository }}/releases/download/kernel-v${{ env.KERNEL_VERSION }}/linux-xiaomi-raphael-${{ env.KERNEL_VERSION }}-1-aarch64.pkg.tar.zst" || {
+              echo "错误: 下载内核包失败"
+              echo "请确保 Release kernel-v${{ env.KERNEL_VERSION }} 存在且包含正确的文件"
+              exit 1
+            }
             
             # 下载固件包
-            curl -L -o xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/firmware-xiaomi-raphael.pkg.tar.zst \
-              "https://github.com/${{ github.repository }}/releases/download/kernel-v${{ env.KERNEL_VERSION }}/firmware-xiaomi-raphael-1.0-1-aarch64.pkg.tar.zst" || echo "下载 firmware-xiaomi-raphael.pkg.tar.zst 失败，可能 Release 不存在"
+            echo "正在下载: firmware-xiaomi-raphael-1.0-1-aarch64.pkg.tar.zst"
+            curl -L -f -o xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/firmware-xiaomi-raphael-1.0-1-aarch64.pkg.tar.zst \
+              "https://github.com/${{ github.repository }}/releases/download/kernel-v${{ env.KERNEL_VERSION }}/firmware-xiaomi-raphael-1.0-1-aarch64.pkg.tar.zst" || {
+              echo "错误: 下载固件包失败"
+              exit 1
+            }
             
             # 下载 ALSA 包
-            curl -L -o xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/alsa-xiaomi-raphael.pkg.tar.zst \
-              "https://github.com/${{ github.repository }}/releases/download/kernel-v${{ env.KERNEL_VERSION }}/alsa-xiaomi-raphael-1.0-1-aarch64.pkg.tar.zst" || echo "下载 alsa-xiaomi-raphael.pkg.tar.zst 失败，可能 Release 不存在"
-            
-            # 检查必要文件是否存在
-            if [ ! -f "xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/linux-xiaomi-raphael.pkg.tar.zst" ]; then
-              echo "错误: 必要的内核包未下载成功"
+            echo "正在下载: alsa-xiaomi-raphael-1.0-1-aarch64.pkg.tar.zst"
+            curl -L -f -o xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/alsa-xiaomi-raphael-1.0-1-aarch64.pkg.tar.zst \
+              "https://github.com/${{ github.repository }}/releases/download/kernel-v${{ env.KERNEL_VERSION }}/alsa-xiaomi-raphael-1.0-1-aarch64.pkg.tar.zst" || {
+              echo "错误: 下载 ALSA 包失败"
               exit 1
-            fi
+            }
           else
             # Debian/Ubuntu 使用 .deb 格式
-            curl -L -o xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/linux-xiaomi-raphael.deb \
-              "https://github.com/${{ github.repository }}/releases/download/kernel-v${{ env.KERNEL_VERSION }}/linux-xiaomi-raphael.deb" || echo "下载 linux-xiaomi-raphael.deb 失败，可能 Release 不存在"
+            echo "下载 Debian/Ubuntu 格式内核包..."
             
-            curl -L -o xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/firmware-xiaomi-raphael.deb \
-              "https://github.com/${{ github.repository }}/releases/download/kernel-v${{ env.KERNEL_VERSION }}/firmware-xiaomi-raphael.deb" || echo "下载 firmware-xiaomi-raphael.deb 失败，可能 Release 不存在"
+            # 下载内核包
+            echo "正在下载: linux-xiaomi-raphael.deb"
+            curl -L -f -o xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/linux-xiaomi-raphael.deb \
+              "https://github.com/${{ github.repository }}/releases/download/kernel-v${{ env.KERNEL_VERSION }}/linux-xiaomi-raphael.deb" || {
+              echo "错误: 下载内核包失败"
+              echo "请确保 Release kernel-v${{ env.KERNEL_VERSION }} 存在且包含正确的文件"
+              exit 1
+            }
+            
+            # 下载固件包
+            echo "正在下载: firmware-xiaomi-raphael.deb"
+            curl -L -f -o xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/firmware-xiaomi-raphael.deb \
+              "https://github.com/${{ github.repository }}/releases/download/kernel-v${{ env.KERNEL_VERSION }}/firmware-xiaomi-raphael.deb" || {
+              echo "错误: 下载固件包失败"
+              exit 1
+            }
             
             # Desktop版本需要额外的alsa包
             if [[ "${{ env.SYSTEM_TYPE }}" == *"desktop"* ]]; then
-              curl -L -o xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/alsa-xiaomi-raphael.deb \
-                "https://github.com/${{ github.repository }}/releases/download/kernel-v${{ env.KERNEL_VERSION }}/alsa-xiaomi-raphael.deb" || echo "下载 alsa-xiaomi-raphael.deb 失败，可能 Release 不存在"
-            fi
-            
-            # 检查必要文件是否存在
-            if [ ! -f "xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/linux-xiaomi-raphael.deb" ]; then
-              echo "错误: 必要的内核包未下载成功"
-              exit 1
+              echo "正在下载: alsa-xiaomi-raphael.deb"
+              curl -L -f -o xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/alsa-xiaomi-raphael.deb \
+                "https://github.com/${{ github.repository }}/releases/download/kernel-v${{ env.KERNEL_VERSION }}/alsa-xiaomi-raphael.deb" || {
+                echo "错误: 下载 ALSA 包失败"
+                exit 1
+              }
             fi
           fi
           
           # 检查是否下载成功
+          echo ""
+          echo "=========================================="
           echo "下载的内核包列表:"
-          ls -la xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/ || echo "目录为空"
+          echo "=========================================="
+          ls -lh xiaomi-raphael-debs_${{ env.KERNEL_VERSION }}/
+          echo "=========================================="
       
       # 根据系统类型选择构建脚本
       - name: 构建系统镜像

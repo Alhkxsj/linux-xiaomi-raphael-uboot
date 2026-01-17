@@ -85,6 +85,27 @@ jobs:
           export CCACHE_DIR="$HOME/.ccache"
           export PATH="/usr/lib/ccache:$PATH"
           
+          # 显示编译环境信息
+          echo "=========================================="
+          echo "编译环境信息"
+          echo "=========================================="
+          echo "系统信息:"
+          uname -a
+          echo ""
+          echo "编译器版本:"
+          clang --version | head -3
+          echo ""
+          echo "链接器版本:"
+          ld.lld --version | head -3
+          echo ""
+          echo "可用内存:"
+          free -h
+          echo ""
+          echo "可用磁盘空间:"
+          df -h .
+          echo "=========================================="
+          echo ""
+          
           # 根据包格式执行对应的构建脚本
           if [[ "${{ inputs.package_format }}" == "pkg.tar.zst" ]]; then
             echo "构建 Arch Linux 格式内核包..."

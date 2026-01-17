@@ -1,29 +1,58 @@
 #!/bin/sh
 set -e  # 遇到错误立即退出
 
+# 颜色输出
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# 日志函数
+log_info() {
+  echo -e "${GREEN}[INFO]${NC} $1"
+}
+
+log_warn() {
+  echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_error() {
+  echo -e "${RED}[ERROR]${NC} $1"
+}
+
 # 检查是否以 root 权限运行
 if [ "$(id -u)" -ne 0 ]
 then
-  echo "rootfs can only be built as root"
-  exit
+  log_error "rootfs can only be built as root"
+  exit 1
 fi
 
 # 获取参数
 DESKTOP_ENV="${1:-gnome}"
 KERNEL_VERSION="${2:-6.18}"
 
-echo "构建配置:"
-echo "桌面环境: $DESKTOP_ENV"
-echo "内核版本: $KERNEL_VERSION"
+echo "=========================================="
+echo "  Arch Linux Desktop 镜像构建"
+echo "=========================================="
+log_info "构建配置:"
+echo "  桌面环境: $DESKTOP_ENV"
+echo "  内核版本: $KERNEL_VERSION"
+echo "  开始时间: $(date)"
+echo ""
 
 # 创建根文件系统镜像
+log_info "创建根文件系统镜像..."
 truncate -s 6G rootfs.img
 mkfs.ext4 rootfs.img
 mkdir rootdir
 mount -o loop rootfs.img rootdir
 
 # 使用 pacstrap 安装基础系统
-pacstrap -K -C /dev/null -d rootdir base base-devel linux linux-firmware
+log_info "使用 pacstrap 安装基础系统..."
+pacstrap -K -C /dev/null -d rootdir base base-devel linux linux-firmware || {
+  log_error "pacstrap 安装失败"
+  exit 1
+}
 
 # 绑定系统目录
 mount --bind /dev rootdir/dev
@@ -97,16 +126,63 @@ echo "Asia/Shanghai" | tee rootdir/etc/timezone
 chroot rootdir hwclock --systohc
 
 # 复制并安装内核包（从预下载的目录）
-cp xiaomi-raphael-debs_$KERNEL_VERSION/linux-xiaomi-raphael*.pkg.tar.zst rootdir/tmp/
-cp xiaomi-raphael-debs_$KERNEL_VERSION/firmware-xiaomi-raphael*.pkg.tar.zst rootdir/tmp/
-cp xiaomi-raphael-debs_$KERNEL_VERSION/alsa-xiaomi-raphael*.pkg.tar.zst rootdir/tmp/
+log_info "安装内核包..."
+KERNEL_DIR="xiaomi-raphael-debs_$KERNEL_VERSION"
+
+# 检查内核包目录是否存在
+if [ ! -d "$KERNEL_DIR" ]; then
+  log_error "内核包目录不存在: $KERNEL_DIR"
+  log_info "请先运行内核构建脚本或从 GitHub Release 下载内核包"
+  exit 1
+fi
+
+# 检查必要的包文件是否存在
+LINUX_PKG=$(ls $KERNEL_DIR/linux-xiaomi-raphael-*.pkg.tar.zst 2>/dev/null | head -n 1)
+FIRMWARE_PKG=$(ls $KERNEL_DIR/firmware-xiaomi-raphael-*.pkg.tar.zst 2>/dev/null | head -n 1)
+ALSA_PKG=$(ls $KERNEL_DIR/alsa-xiaomi-raphael-*.pkg.tar.zst 2>/dev/null | head -n 1)
+
+if [ -z "$LINUX_PKG" ]; then
+  log_error "未找到内核包: linux-xiaomi-raphael-*.pkg.tar.zst"
+  exit 1
+fi
+
+if [ -z "$FIRMWARE_PKG" ]; then
+  log_error "未找到固件包: firmware-xiaomi-raphael-*.pkg.tar.zst"
+  exit 1
+fi
+
+log_info "找到的包:"
+echo "  - $(basename $LINUX_PKG)"
+echo "  - $(basename $FIRMWARE_PKG)"
+[ -n "$ALSA_PKG" ] && echo "  - $(basename $ALSA_PKG)"
+echo ""
+
+# 复制内核包到临时目录
+cp $LINUX_PKG rootdir/tmp/
+cp $FIRMWARE_PKG rootdir/tmp/
+[ -n "$ALSA_PKG" ] && cp $ALSA_PKG rootdir/tmp/
 
 # 使用 pacman 安装内核包
-chroot rootdir pacman -U --noconfirm /tmp/linux-xiaomi-raphael*.pkg.tar.zst
-chroot rootdir pacman -U --noconfirm /tmp/firmware-xiaomi-raphael*.pkg.tar.zst
-chroot rootdir pacman -U --noconfirm /tmp/alsa-xiaomi-raphael*.pkg.tar.zst
+log_info "安装内核包..."
+chroot rootdir pacman -U --noconfirm /tmp/$(basename $LINUX_PKG) || {
+  log_error "安装内核包失败"
+  exit 1
+}
 
+chroot rootdir pacman -U --noconfirm /tmp/$(basename $FIRMWARE_PKG) || {
+  log_error "安装固件包失败"
+  exit 1
+}
+
+if [ -n "$ALSA_PKG" ]; then
+  chroot rootdir pacman -U --noconfirm /tmp/$(basename $ALSA_PKG) || {
+    log_warn "安装 ALSA 包失败（非致命错误）"
+  }
+fi
+
+# 清理临时文件
 rm rootdir/tmp/*.pkg.tar.zst
+log_info "内核包安装完成"
 
 # 配置 mkinitcpio
 cat > rootdir/etc/mkinitcpio.conf << 'EOF'
@@ -175,13 +251,18 @@ HOOKS=(base udev autodetect modconf block filesystems keyboard fsck)
 EOF
 
 # 生成 initramfs
-chroot rootdir mkinitcpio -P
+log_info "生成 initramfs..."
+chroot rootdir mkinitcpio -P || {
+  log_error "生成 initramfs 失败"
+  exit 1
+}
 
 # 启用 systemd 服务
-chroot rootdir systemctl enable NetworkManager
-chroot rootdir systemctl enable bluetooth
-chroot rootdir systemctl enable sshd
-chroot rootdir systemctl enable gdm
+log_info "启用 systemd 服务..."
+chroot rootdir systemctl enable NetworkManager || log_warn "启用 NetworkManager 失败"
+chroot rootdir systemctl enable bluetooth || log_warn "启用 bluetooth 失败"
+chroot rootdir systemctl enable sshd || log_warn "启用 sshd 失败"
+chroot rootdir systemctl enable gdm || log_warn "启用 gdm 失败"
 
 # 配置 NCM
 cat > rootdir/etc/dnsmasq.d/usb-ncm.conf << 'EOF'
@@ -278,18 +359,36 @@ chroot rootdir pacman -Scc --noconfirm
 rm -f rootdir/lib/firmware/reg*
 
 # 卸载所有挂载点
-umount rootdir/sys
-umount rootdir/proc
-umount rootdir/dev/pts
-umount rootdir/dev
-umount rootdir
+log_info "卸载挂载点并清理..."
+umount rootdir/sys || log_warn "卸载 /sys 失败"
+umount rootdir/proc || log_warn "卸载 /proc 失败"
+umount rootdir/dev/pts || log_warn "卸载 /dev/pts 失败"
+umount rootdir/dev || log_warn "卸载 /dev 失败"
+umount rootdir || log_warn "卸载 rootdir 失败"
 
-rm -d rootdir
+rm -d rootdir || log_warn "删除 rootdir 目录失败"
 
 # 设置文件系统 UUID
+log_info "设置文件系统 UUID..."
 tune2fs -U ee8d3593-59b1-480e-a3b6-4fefb17ee7d8 rootfs.img
 
-echo 'cmdline for legacy boot: "root=PARTLABEL=userdata"'
+echo ""
+echo "=========================================="
+log_info "镜像构建完成！"
+echo "=========================================="
+echo "生成的文件:"
+echo "  - rootfs.img (未压缩)"
+echo "  - rootfs.7z (压缩后)"
+echo ""
+echo "启动参数:"
+echo '  cmdline for legacy boot: "root=PARTLABEL=userdata"'
+echo ""
+log_info "结束时间: $(date)"
+echo "=========================================="
 
 # 压缩 rootfs 镜像
-7z a rootfs.7z rootfs.img
+log_info "压缩 rootfs 镜像..."
+7z a rootfs.7z rootfs.img || {
+  log_error "压缩镜像失败"
+  exit 1
+}
