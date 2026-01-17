@@ -16,6 +16,7 @@ on:
           - ubuntu-desktop
           - ubuntu-server
           - arch-desktop
+          - arch-server
       kernel_version:
         description: '内核版本号 (从 Release 下载对应版本)'
         required: true
@@ -30,6 +31,13 @@ on:
           - phosh-core
           - phosh-full
           - phosh-phone
+          - gnome
+          - plasma
+          - xfce
+          - mate
+          - lxqt
+          - lxde
+          - none
 
 # 工作流配置
 jobs:
@@ -178,6 +186,9 @@ jobs:
             "arch-desktop")
               sudo sh arch-desktop_build.sh "${{ env.DESKTOP_ENV }}" "${{ env.KERNEL_VERSION }}"
               ;;
+            "arch-server")
+              sudo sh arch-server_build.sh "${{ env.KERNEL_VERSION }}"
+              ;;
             *)
               echo "错误: 未知的系统类型: ${{ env.SYSTEM_TYPE }}"
               exit 1
@@ -204,7 +215,7 @@ jobs:
               OS_NAME="Ubuntu"
               OS_VERSION="noble"
               ;;
-            "arch-desktop")
+            "arch-desktop"|"arch-server")
               OS_NAME="Arch Linux"
               OS_VERSION="rolling"
               ;;
@@ -262,6 +273,8 @@ jobs:
             DESCRIPTION="${DESCRIPTION}- 已安装 SSH 服务器\n"
             DESCRIPTION="${DESCRIPTION}- 已安装中文语言支持\n"
             DESCRIPTION="${DESCRIPTION}- 包含必要的设备驱动和固件\n"
+            DESCRIPTION="${DESCRIPTION}- 开机15秒后自动熄屏\n"
+            DESCRIPTION="${DESCRIPTION}- 命令行输入 'leijun' 关闭屏幕，'jinfan' 打开屏幕\n"
           else
             DESCRIPTION="${DESCRIPTION}说明：\n"
             DESCRIPTION="${DESCRIPTION}- 这是一个带有图形界面的桌面版本\n"

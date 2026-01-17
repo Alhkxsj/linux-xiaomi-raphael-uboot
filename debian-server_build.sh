@@ -152,7 +152,10 @@ echo "root:1234" | chroot rootdir chpasswd
 chroot rootdir useradd -m -G sudo -s /bin/bash zl
 echo "zl:1234" | chroot rootdir chpasswd
 
-# 允许SSH root登录
+# 配置 sudo 免密
+echo "%sudo ALL=(ALL:ALL) NOPASSWD: ALL" | tee rootdir/etc/sudoers.d/nopasswd
+
+# 配置 SSH（允许 root 登录）
 echo "PermitRootLogin yes" | tee -a rootdir/etc/ssh/sshd_config
 echo "PasswordAuthentication yes" | tee -a rootdir/etc/ssh/sshd_config
 
@@ -218,13 +221,13 @@ rm -d boot_tmp
 rm -f rootdir/lib/firmware/reg*
 
 # 卸载所有挂载点
-umount rootdir/sys
-umount rootdir/proc
-umount rootdir/dev/pts
-umount rootdir/dev
-umount rootdir
+umount rootdir/sys 2>/dev/null || true
+umount rootdir/proc 2>/dev/null || true
+umount rootdir/dev/pts 2>/dev/null || true
+umount rootdir/dev 2>/dev/null || true
+umount rootdir 2>/dev/null || true
 
-rm -d rootdir
+rm -rf rootdir 2>/dev/null || true
 
 # 设置文件系统 UUID
 tune2fs -U ee8d3593-59b1-480e-a3b6-4fefb17ee7d8 rootfs.img

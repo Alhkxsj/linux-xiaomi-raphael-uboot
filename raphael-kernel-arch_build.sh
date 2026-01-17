@@ -87,7 +87,12 @@ git clone https://github.com/GengWei1997/linux.git --branch raphael-$KERNEL_VERS
   exit 1
 }
 
-cd linux
+# 保存当前目录
+ORIGINAL_DIR="$(pwd)"
+cd linux || {
+  log_error "进入 linux 目录失败"
+  exit 1
+}
 
 # 下载内核配置文件
 log_info "下载内核配置文件..."
@@ -238,6 +243,11 @@ tar --create --zstd --file ../alsa-xiaomi-raphael-1.0-1-aarch64.pkg.tar.zst \
 tar --append --file ../alsa-xiaomi-raphael-1.0-1-aarch64.pkg.tar.zst .PKGINFO
 
 cd ..
+
+# 返回原始目录
+cd "$ORIGINAL_DIR" || {
+  log_warn "无法返回原始目录，继续清理..."
+}
 
 # 清理临时目录
 log_info "清理临时文件..."

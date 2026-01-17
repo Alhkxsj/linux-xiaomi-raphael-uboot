@@ -1,9 +1,19 @@
 #!/bin/bash
 set -e  # 遇到错误立即退出
 
+# 保存当前目录
+ORIGINAL_DIR="$(pwd)"
+
 # 克隆指定版本的内核源码
+if [ -d "linux" ]; then
+  rm -rf linux
+fi
+
 git clone https://github.com/GengWei1997/linux.git --branch raphael-$1 --depth 1 linux
-cd linux
+cd linux || {
+  echo "错误: 进入 linux 目录失败"
+  exit 1
+}
 
 # 下载内核配置文件
 wget -P arch/arm64/configs https://raw.githubusercontent.com/GengWei1997/kernel-deb/refs/heads/main/raphael.config
@@ -33,7 +43,10 @@ rm -rf ../linux-xiaomi-raphael/lib
 make -j$(nproc) ARCH=arm64 LLVM=1 INSTALL_MOD_PATH=../linux-xiaomi-raphael modules_install
 rm ../linux-xiaomi-raphael/lib/modules/**/build
 
-cd ..
+# 返回原始目录
+cd "$ORIGINAL_DIR" || {
+  echo "警告: 无法返回原始目录"
+}
 
 # 清理源码目录
 rm -rf linux

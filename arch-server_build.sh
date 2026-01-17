@@ -28,23 +28,10 @@ then
 fi
 
 # 获取参数
-DESKTOP_ENV="${1:-gnome}"
-KERNEL_VERSION="${2:-6.18}"
+KERNEL_VERSION="${1:-6.18}"
 
-# 验证参数
+# 验证内核版本格式
 validate_params() {
-  # 验证桌面环境
-  case "$DESKTOP_ENV" in
-    gnome|plasma|xfce|mate|lxqt|lxde|none)
-      ;;
-    *)
-      log_error "无效的桌面环境: $DESKTOP_ENV"
-      log_info "支持的桌面环境: gnome, plasma, xfce, mate, lxqt, lxde, none"
-      exit 1
-      ;;
-  esac
-
-  # 验证内核版本格式（简单的版本号验证）
   if ! echo "$KERNEL_VERSION" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
     log_error "无效的内核版本格式: $KERNEL_VERSION"
     log_info "正确格式: 6.18 或 6.18.1"
@@ -56,17 +43,17 @@ validate_params() {
 validate_params
 
 echo "=========================================="
-echo "  Arch Linux 镜像构建"
+echo "  Arch Linux Server 镜像构建"
 echo "=========================================="
 log_info "构建配置:"
-echo "  桌面环境: $DESKTOP_ENV"
+echo "  系统类型: Server (无图形界面)"
 echo "  内核版本: $KERNEL_VERSION"
 echo "  开始时间: $(date)"
 echo ""
 
 # 创建根文件系统镜像
 log_info "创建根文件系统镜像..."
-truncate -s 6G rootfs.img
+truncate -s 2G rootfs.img
 mkfs.ext4 rootfs.img
 mkdir rootdir
 mount -o loop rootfs.img rootdir
@@ -102,90 +89,20 @@ chroot rootdir pacman-key --populate archlinuxarm
 # 更新系统
 chroot rootdir pacman -Syu --noconfirm
 
-# 安装基础软件包
+# 安装基础软件包（Server 版本，无图形界面）
+log_info "安装基础软件包..."
 chroot rootdir pacman -S --noconfirm \
   bash-completion sudo openssh nano systemd chrony curl wget dnsmasq iptables iproute2 \
   networkmanager wireless_tools wpa_supplicant bluez bluez-utils \
-  pulseaudio pulseaudio-alsa pipewire pipewire-pulse pipewire-alsa pipewire-jack \
-  alsa-utils alsa-plugins alsa-lib zstd
+  vim htop tmux screen rsync git
 
 # 安装设备特定软件包
 chroot rootdir pacman -S --noconfirm \
   rmtfs tqftpserv
 
-# 根据桌面环境参数安装对应的桌面环境
-case "$DESKTOP_ENV" in
-  "gnome")
-    log_info "安装 GNOME 桌面环境..."
-    chroot rootdir pacman -S --noconfirm \
-      gnome gnome-extra gdm \
-      xorg xorg-server xorg-xinit xorg-drivers \
-      gnome-terminal gnome-tweaks gnome-system-monitor \
-      nautilus file-roller eog evince \
-      firefox gnome-shell-extensions
-    ;;
-  "plasma")
-    log_info "安装 KDE Plasma 桌面环境..."
-    chroot rootdir pacman -S --noconfirm \
-      plasma plasma-meta kde-applications \
-      xorg xorg-server xorg-xinit xorg-drivers \
-      konsole dolphin kate gwenview \
-      firefox sddm
-    ;;
-  "xfce")
-    log_info "安装 XFCE 桌面环境..."
-    chroot rootdir pacman -S --noconfirm \
-      xfce4 xfce4-goodies \
-      xorg xorg-server xorg-xinit xorg-drivers \
-      xfce4-terminal thunar mousepad \
-      firefox lightdm lightdm-gtk-greeter
-    ;;
-  "mate")
-    log_info "安装 MATE 桌面环境..."
-    chroot rootdir pacman -S --noconfirm \
-      mate mate-extra \
-      xorg xorg-server xorg-xinit xorg-drivers \
-      mate-terminal caja pluma \
-      firefox lightdm lightdm-gtk-greeter
-    ;;
-  "lxqt")
-    log_info "安装 LXQt 桌面环境..."
-    chroot rootdir pacman -S --noconfirm \
-      lxqt lxqt-meta \
-      xorg xorg-server xorg-xinit xorg-drivers \
-      qterminal pcmanfm-qt leafpad \
-      firefox sddm
-    ;;
-  "lxde")
-    log_info "安装 LXDE 桌面环境..."
-    chroot rootdir pacman -S --noconfirm \
-      lxde lxde-common \
-      xorg xorg-server xorg-xinit xorg-drivers \
-      lxterminal pcmanfm leafpad \
-      firefox lightdm lightdm-gtk-greeter
-    ;;
-  "none")
-    log_info "无桌面环境，仅安装基础系统..."
-    # 不安装任何桌面环境
-    ;;
-  *)
-    log_error "未知的桌面环境: $DESKTOP_ENV"
-    log_info "支持的桌面环境: gnome, plasma, xfce, mate, lxqt, lxde, none"
-    exit 1
-    ;;
-esac
-
-# 安装中文字体和输入法
+# 安装中文字体（用于终端显示中文）
 chroot rootdir pacman -S --noconfirm \
-  noto-fonts-cjk noto-fonts noto-fonts-extra \
-  wqy-microhei wqy-zenhei \
-  fcitx5 fcitx5-chinese-addons fcitx5-gtk fcitx5-qt5 fcitx5-configtool \
-  ibus ibus-pinyin ibus-libpinyin
-
-# 安装语言包和设置默认语言为简体中文
-chroot rootdir pacman -S --noconfirm \
-  adobe-source-han-sans-cn-fonts \
-  adobe-source-han-serif-cn-fonts
+  wqy-microhei wqy-zenhei
 
 # 配置 locale
 cat > rootdir/etc/locale.gen << 'EOF'
@@ -193,8 +110,7 @@ zh_CN.UTF-8 UTF-8
 en_US.UTF-8 UTF-8
 EOF
 chroot rootdir locale-gen
-echo "LANG=zh_CN.UTF-8" | tee rootdir/etc/locale.conf
-echo "LC_ALL=zh_CN.UTF-8" | tee -a rootdir/etc/locale.conf
+echo "LANG=en_US.UTF-8" | tee rootdir/etc/locale.conf
 
 # 设置时区
 chroot rootdir ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
@@ -217,7 +133,6 @@ fi
 # 检查必要的包文件是否存在
 LINUX_PKG=$(ls "$KERNEL_DIR"/linux-xiaomi-raphael-*.pkg.tar.zst 2>/dev/null | head -n 1)
 FIRMWARE_PKG=$(ls "$KERNEL_DIR"/firmware-xiaomi-raphael-*.pkg.tar.zst 2>/dev/null | head -n 1)
-ALSA_PKG=$(ls "$KERNEL_DIR"/alsa-xiaomi-raphael-*.pkg.tar.zst 2>/dev/null | head -n 1)
 
 if [ -z "$LINUX_PKG" ]; then
   log_error "未找到内核包: linux-xiaomi-raphael-*.pkg.tar.zst"
@@ -232,13 +147,11 @@ fi
 log_info "找到的包:"
 echo "  - $(basename "$LINUX_PKG")"
 echo "  - $(basename "$FIRMWARE_PKG")"
-[ -n "$ALSA_PKG" ] && echo "  - $(basename "$ALSA_PKG")"
 echo ""
 
 # 复制内核包到临时目录
 cp "$LINUX_PKG" rootdir/tmp/
 cp "$FIRMWARE_PKG" rootdir/tmp/
-[ -n "$ALSA_PKG" ] && cp "$ALSA_PKG" rootdir/tmp/
 
 # 使用 pacman 安装内核包
 log_info "安装内核包..."
@@ -251,12 +164,6 @@ chroot rootdir pacman -U --noconfirm "/tmp/$(basename "$FIRMWARE_PKG")" || {
   log_error "安装固件包失败"
   exit 1
 }
-
-if [ -n "$ALSA_PKG" ]; then
-  chroot rootdir pacman -U --noconfirm "/tmp/$(basename "$ALSA_PKG")" || {
-    log_warn "安装 ALSA 包失败（非致命错误）"
-  }
-fi
 
 # 清理临时文件
 rm -f rootdir/tmp/*.pkg.tar.zst
@@ -298,12 +205,12 @@ FILES=()
 #                 system.
 #   modconf:      adds modprobe from the command line.
 #   block:        adds block device filesystem support.
-#   filesystems:  adds filesystem support.
-#   keyboard:     adds keyboard support (needed for encrypted systems).
-#   keymap:       adds keymap support (needed for encrypted systems).
-#   encrypt:      adds dm-crypt support (needed for encrypted systems).
-#   fsck:         adds filesystem check support.
-#   resume:       adds resume support (needed for hibernation).
+#   filesystems: adds filesystem support.
+#   keyboard:    adds keyboard support (needed for encrypted systems).
+#   keymap:      adds keymap support (needed for encrypted systems).
+#   encrypt:     adds dm-crypt support (needed for encrypted systems).
+#   fsck:        adds filesystem check support.
+#   resume:      adds resume support (needed for hibernation).
 #
 # An example HOOKS setting is:
 #   HOOKS=(base udev autodetect modconf block filesystems keyboard fsck)
@@ -340,22 +247,6 @@ log_info "启用 systemd 服务..."
 chroot rootdir systemctl enable NetworkManager || log_warn "启用 NetworkManager 失败"
 chroot rootdir systemctl enable bluetooth || log_warn "启用 bluetooth 失败"
 chroot rootdir systemctl enable sshd || log_warn "启用 sshd 失败"
-
-# 根据桌面环境启用对应的显示管理器
-case "$DESKTOP_ENV" in
-  "gnome")
-    chroot rootdir systemctl enable gdm || log_warn "启用 gdm 失败"
-    ;;
-  "plasma"|"lxqt")
-    chroot rootdir systemctl enable sddm || log_warn "启用 sddm 失败"
-    ;;
-  "xfce"|"mate"|"lxde")
-    chroot rootdir systemctl enable lightdm || log_warn "启用 lightdm 失败"
-    ;;
-  "none")
-    log_info "无桌面环境，跳过显示管理器"
-    ;;
-esac
 
 # 配置 NCM
 cat > rootdir/etc/dnsmasq.d/usb-ncm.conf << 'EOF'
@@ -424,32 +315,56 @@ echo "root:1234" | chroot rootdir chpasswd
 chroot rootdir useradd -m -G wheel -s /bin/bash zl
 echo "zl:1234" | chroot rootdir chpasswd
 
-# 配置 sudo 权限
+# 配置 sudo 权限（免密）
 echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" | tee rootdir/etc/sudoers.d/wheel
 
 # 配置 SSH（允许 root 登录，无密码限制）
 echo "PermitRootLogin yes" | tee -a rootdir/etc/ssh/sshd_config
 echo "PasswordAuthentication yes" | tee -a rootdir/etc/ssh/sshd_config
 
-# 配置输入法环境变量
-cat >> rootdir/etc/profile << 'EOF'
-export GTK_IM_MODULE=fcitx
-export QT_IM_MODULE=fcitx
-export XMODIFIERS=@im=fcitx
+# 添加屏幕管理命令到全局bash配置
+cat >> rootdir/etc/bash.bashrc << 'EOF'
+# 屏幕管理命令
+leijun() {
+    if [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_TTY" ]; then
+        sudo sh -c 'TERM=linux setterm --blank force </dev/tty1'
+    else
+        setterm --blank force --term linux </dev/tty1
+    fi
+    echo "屏幕已关闭"
+}
+
+jinfan() {
+    if [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_TTY" ]; then
+        sudo sh -c 'TERM=linux setterm --blank poke </dev/tty1'
+    else
+        setterm --blank poke --term linux </dev/tty1
+    fi
+    echo "屏幕已开启"
+}
 EOF
+
+# 配置开机 15 秒后自动熄屏的 Systemd 服务
+cat > rootdir/etc/systemd/system/blank_screen.service << 'EOF'
+[Unit]
+Description=Auto-blank screen after 15s
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStartPre=/bin/bash -c "/usr/bin/sleep 15"
+ExecStart=sh -c 'TERM=linux setterm --blank force </dev/tty1'
+User=root
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+EOF
+chroot rootdir systemctl enable blank_screen.service
 
 # 清理包缓存
 chroot rootdir pacman -Scc --noconfirm
-
-# 注意：Arch Linux 内核文件路径与 Debian 不同
-# 如果使用 Arch Linux ARM 官方内核，文件路径为：
-# - /boot/vmlinuz-linux (内核)
-# - /boot/initramfs-linux.img (initramfs)
-# - /boot/initramfs-linux-fallback.img (备用 initramfs)
-# 设备树文件需要从定制的内核包中获取
-
-# 删除 wifi 证书
-rm -f rootdir/lib/firmware/reg*
 
 # 卸载所有挂载点
 log_info "卸载挂载点并清理..."
@@ -478,6 +393,15 @@ echo "  - rootfs.7z (压缩后)"
 echo ""
 echo "启动参数:"
 echo '  cmdline for legacy boot: "root=PARTLABEL=userdata"'
+echo ""
+echo "系统特性:"
+echo "  - 无图形界面，纯命令行"
+echo "  - 包含基础网络管理工具"
+echo "  - 已安装 SSH 服务器"
+echo "  - 已安装中文语言支持"
+echo "  - 包含必要的设备驱动和固件"
+echo "  - 开机15秒后自动熄屏"
+echo "  - 命令行输入 'leijun' 关闭屏幕，'jinfan' 打开屏幕"
 echo ""
 echo "默认账号:"
 echo "  root / 1234"
