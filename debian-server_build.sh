@@ -149,8 +149,8 @@ PARTLABEL=cache /boot vfat umask=0077 0 1" | tee rootdir/etc/fstab
 
 # 创建默认用户
 echo "root:1234" | chroot rootdir chpasswd
-chroot rootdir useradd -m -G sudo -s /bin/bash user
-echo "user:1234" | chroot rootdir chpasswd
+chroot rootdir useradd -m -G sudo -s /bin/bash zl
+echo "zl:1234" | chroot rootdir chpasswd
 
 # 允许SSH root登录
 echo "PermitRootLogin yes" | tee -a rootdir/etc/ssh/sshd_config

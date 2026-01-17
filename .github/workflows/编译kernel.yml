@@ -9,6 +9,14 @@ on:
         description: '内核版本号 (如 6.18)'
         required: true
         default: '6.18'
+      package_format:
+        description: '包格式'
+        required: true
+        default: 'deb'
+        type: choice
+        options:
+          - deb
+          - pkg.tar.zst
 
 # 工作流配置
 jobs:
@@ -65,8 +73,14 @@ jobs:
           export CCACHE_DIR="$HOME/.ccache"
           export PATH="/usr/lib/ccache:$PATH"
           
-          # 执行内核编译脚本
-          sudo sh raphael-kernel_build.sh ${{ inputs.kernel_version }}
+          # 根据包格式执行对应的构建脚本
+          if [[ "${{ inputs.package_format }}" == "pkg.tar.zst" ]]; then
+            echo "构建 Arch Linux 格式内核包..."
+            sudo sh raphael-kernel-arch_build.sh ${{ inputs.kernel_version }}
+          else
+            echo "构建 Debian 格式内核包..."
+            sudo sh raphael-kernel_build.sh ${{ inputs.kernel_version }}
+          fi
       
       # 获取当前时间戳
       - name: 获取构建时间
@@ -76,7 +90,9 @@ jobs:
       
       # 列出编译产物
       - name: 列出编译产物
-        run: ls -la *.deb
+        run: |
+          echo "编译产物列表:"
+          ls -la *.deb *.pkg.tar.zst 2>/dev/null || echo "未找到编译产物"
       
       # 创建 GitHub Release 并上传编译产物
       - name: 创建 Release 并上传产物
@@ -87,12 +103,14 @@ jobs:
           body: |
             xiaomi raphael linux内核
             - 版本: ${{ inputs.kernel_version }}
+            - 包格式: ${{ inputs.package_format }}
             - 构建时间: ${{ steps.get-timestamp.outputs.timestamp }}
             - 构建 ID: ${{ env.BUILD_TIMESTAMP }}
           draft: false
           prerelease: false
           files: |
             *.deb
+            *.pkg.tar.zst
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
@@ -100,8 +118,7 @@ jobs:
       - name: 上传内核包作为工作流制品
         uses: actions/upload-artifact@v4
         with:
-          name: kernel-packages-v${{ inputs.kernel_version }}
+          name: kernel-packages-${{ inputs.package_format }}-v${{ inputs.kernel_version }}
           path: |
-            linux-xiaomi-raphael.deb
-            firmware-xiaomi-raphael.deb
-            alsa-xiaomi-raphael.deb
+            *.deb
+            *.pkg.tar.zst
