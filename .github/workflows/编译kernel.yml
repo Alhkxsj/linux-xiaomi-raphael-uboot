@@ -58,14 +58,16 @@ jobs:
           7zip kmod bash cpio binutils tar git wget dpkg libssl-dev clang llvm lld \
           libelf-dev python3 rsync
       
-      # 设置 ccache 缓存
+      # 设置 ccache 缓存（版本2 - 修复语法错误）
       - name: 设置 ccache
         uses: actions/cache@v3
         with:
           path: ~/.ccache
-          key: ${{ runner.os }}-ccache-kernel-${{ inputs.kernel_version }}-${{ inputs.package_format }}-${{ hashFiles('raphael-kernel_build.sh', 'raphael-kernel-arch_build.sh') }}
+          key: ${{ runner.os }}-ccache-kernel-v2-${{ inputs.kernel_version }}-${{ inputs.package_format }}-${{ hashFiles('raphael-kernel_build.sh', 'raphael-kernel-arch_build.sh') }}
           restore-keys: |
+            ${{ runner.os }}-ccache-kernel-v2-${{ inputs.kernel_version }}-${{ inputs.package_format }}-
             ${{ runner.os }}-ccache-kernel-${{ inputs.kernel_version }}-${{ inputs.package_format }}-
+            ${{ runner.os }}-ccache-kernel-v2-${{ inputs.kernel_version }}-
             ${{ runner.os }}-ccache-kernel-${{ inputs.kernel_version }}-
             ${{ runner.os }}-ccache-kernel-
       
