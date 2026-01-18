@@ -113,6 +113,13 @@ chroot rootdir pacman -S --noconfirm \
 chroot rootdir pacman -S --noconfirm \
   rmtfs tqftpserv
 
+# 安装 ALSA 配置包（如果存在）
+if [ -n "$ALSA_PKG" ]; then
+  chroot rootdir pacman -U --noconfirm "/tmp/$(basename "$ALSA_PKG")" || {
+    log_warn "安装 ALSA 配置包失败（非致命错误）"
+  }
+fi
+
 # 根据桌面环境参数安装对应的桌面环境
 case "$DESKTOP_ENV" in
   "gnome")

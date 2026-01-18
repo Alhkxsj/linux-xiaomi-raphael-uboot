@@ -1,12 +1,42 @@
 #!/bin/sh
 set -e  # 遇到错误立即退出
 
+# 颜色输出
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# 检查必要的工具
+check_dependencies() {
+  echo -e "${GREEN}[INFO]${NC} 检查编译依赖..."
+  
+  local missing_deps=()
+  
+  for cmd in debootstrap truncate mkfs.ext4 wget mount umount cp rm; do
+    if ! command -v $cmd >/dev/null 2>&1; then
+      missing_deps="$missing_deps $cmd"
+    fi
+  done
+  
+  if [ -n "$missing_deps" ]; then
+    echo -e "${RED}[ERROR]${NC} 缺少必要的依赖:$missing_deps"
+    echo "请安装: sudo apt install -y debootstrap qemu-user-static binfmt-support"
+    exit 1
+  fi
+  
+  echo -e "${GREEN}[INFO]${NC} 所有依赖已安装"
+}
+
 # 检查是否以 root 权限运行
 if [ "$(id -u)" -ne 0 ]
 then
-  echo "rootfs can only be built as root"
-  exit
+  echo -e "${RED}[ERROR]${NC} rootfs can only be built as root"
+  exit 1
 fi
+
+# 检查依赖
+check_dependencies
 
 # 设置 Ubuntu 版本
 UBUNTU_VERSION="noble"
