@@ -63,8 +63,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.ccache
-          key: ${{ runner.os }}-ccache-kernel-${{ inputs.kernel_version }}
+          key: ${{ runner.os }}-ccache-kernel-${{ inputs.kernel_version }}-${{ inputs.package_format }}-${{ hashFiles('raphael-kernel_build.sh', 'raphael-kernel-arch_build.sh') }}
           restore-keys: |
+            ${{ runner.os }}-ccache-kernel-${{ inputs.kernel_version }}-${{ inputs.package_format }}-
+            ${{ runner.os }}-ccache-kernel-${{ inputs.kernel_version }}-
             ${{ runner.os }}-ccache-kernel-
       
       # 安装并配置 ccache
@@ -106,14 +108,42 @@ jobs:
           echo "=========================================="
           echo ""
           
+          # 设置编译超时和进度显示
+          echo "开始编译内核 (超时: 6小时)..."
+          echo "=========================================="
+          
           # 根据包格式执行对应的构建脚本
           if [[ "${{ inputs.package_format }}" == "pkg.tar.zst" ]]; then
             echo "构建 Arch Linux 格式内核包..."
-            sudo sh raphael-kernel-arch_build.sh ${{ inputs.kernel_version }}
+            if ! sudo timeout 6h sh raphael-kernel-arch_build.sh ${{ inputs.kernel_version }}; then
+              echo "=========================================="
+              echo "编译失败！显示最后 200 行日志:"
+              echo "=========================================="
+              if [ -f linux/compile.log ]; then
+                tail -200 linux/compile.log
+              else
+                echo "未找到编译日志文件"
+              fi
+              exit 1
+            fi
           else
             echo "构建 Debian 格式内核包..."
-            sudo sh raphael-kernel_build.sh ${{ inputs.kernel_version }}
+            if ! sudo timeout 6h sh raphael-kernel_build.sh ${{ inputs.kernel_version }}; then
+              echo "=========================================="
+              echo "编译失败！显示最后 200 行日志:"
+              echo "=========================================="
+              if [ -f linux/compile.log ]; then
+                tail -200 linux/compile.log
+              else
+                echo "未找到编译日志文件"
+              fi
+              exit 1
+            fi
           fi
+          
+          echo "=========================================="
+          echo "编译成功完成！"
+          echo "=========================================="
       
       # 获取当前时间戳
       - name: 获取构建时间
@@ -155,3 +185,14 @@ jobs:
           path: |
             *.deb
             *.pkg.tar.zst
+      
+      # 上传编译日志（仅在编译失败时）
+      - name: 上传编译日志
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compile-logs-${{ inputs.package_format }}-v${{ inputs.kernel_version }}
+          path: |
+            linux/compile.log
+            linux-xiaomi-raphael-*/boot/
+          retention-days: 7

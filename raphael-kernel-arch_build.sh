@@ -27,8 +27,8 @@ check_dependencies() {
   local missing_deps=()
   
   for cmd in git wget make clang ld.lld llvm-ar llvm-nm llvm-objcopy bc bison flex openssl python3; do
-    if ! command -v $cmd &> /dev/null; then
-      missing_deps+=($cmd)
+    if ! command -v $cmd 2>&1 >/dev/null; then
+      missing_deps+=("$cmd")
     fi
   done
   
@@ -60,6 +60,35 @@ check_system_resources() {
   log_info "内存: ${mem_gb}GB, 可用磁盘: ${disk_gb}GB"
 }
 
+# 检查编译环境
+check_compile_environment() {
+  log_info "检查编译环境..."
+  
+  # 检查编译器
+  if command -v clang &> /dev/null; then
+    log_info "Clang 版本: $(clang --version | head -n1)"
+  else
+    log_error "未找到 clang 编译器"
+    exit 1
+  fi
+  
+  # 检查链接器
+  if command -v ld.lld &> /dev/null; then
+    log_info "LLD 链接器版本: $(ld.lld --version | head -n1)"
+  else
+    log_error "未找到 lld 链接器"
+    exit 1
+  fi
+  
+  # 检查可用内存
+  local available_mem=$(free -g | awk '/^Mem:/{print $7}')
+  log_info "可用内存: ${available_mem}GB"
+  
+  # 检查可用磁盘空间
+  local available_disk=$(df -BG . | awk 'NR==2{print $4}' | sed 's/G//')
+  log_info "可用磁盘空间: ${available_disk}GB"
+}
+
 # 克隆指定版本的内核源码
 echo "=========================================="
 echo "  Xiaomi Raphael 内核构建 (Arch Linux)  "
@@ -74,6 +103,7 @@ echo ""
 # 检查依赖和系统资源
 check_dependencies
 check_system_resources
+check_compile_environment
 
 # 克隆指定版本的内核源码
 log_info "克隆内核源码 (分支: raphael-$KERNEL_VERSION)..."
