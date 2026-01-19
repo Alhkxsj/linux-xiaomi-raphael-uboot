@@ -125,13 +125,13 @@ chroot rootdir apt install -y bash-completion sudo apt-utils ssh openssh-server 
 case "$DESKTOP_ENV" in
   "gnome")
     echo -e "${GREEN}[INFO]${NC} 安装 GNOME 桌面环境..."
-    chroot rootdir apt install -y gnome gnome-desktop-environment gnome-tweaks gnome-system-monitor gnome-software gnome-text-editor gnome-logs gnome-extensions gnome-control-center gnome-backgrounds gnome-screenshot gnome-calculator gnome-calendar gnome-clocks gnome-maps gnome-music gnome-photos gnome-screenshot gnome-terminal gnome-user-docs
+    chroot rootdir apt install -y gnome-core gnome-tweaks gnome-system-tools gnome-software gnome-text-editor gnome-logs gnome-control-center gnome-backgrounds gnome-screenshot gnome-calculator gnome-calendar gnome-clocks gnome-maps gnome-music gnome-photos gnome-terminal
     chroot rootdir apt install -y xorg xorg-xinit xserver-xorg xserver-xorg-video-all xserver-xorg-input-all
     chroot rootdir apt install -y nautilus file-roller eog evince firefox
     ;;
   "plasma")
     echo -e "${GREEN}[INFO]${NC} 安装 KDE Plasma 桌面环境..."
-    chroot rootdir apt install -y plasma-desktop plasma-workspace plasma-meta plasma-apps kde-standard konsole dolphin kate gwenview firefox sddm
+    chroot rootdir apt install -y plasma-desktop plasma-workspace konsole dolphin kate gwenview firefox sddm
     chroot rootdir apt install -y xorg xorg-xinit xserver-xorg xserver-xorg-video-all xserver-xorg-input-all
     ;;
   "xfce")
