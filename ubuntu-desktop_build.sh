@@ -133,11 +133,11 @@ case "$DESKTOP_ENV" in
     echo -e "${GREEN}[INFO]${NC} 安装 GNOME 桌面环境..."
     chroot rootdir apt install -y gnome-core gnome-tweaks gnome-system-tools gnome-software gnome-text-editor gnome-logs gnome-control-center gnome-backgrounds gnome-screenshot gnome-calculator gnome-calendar gnome-clocks gnome-maps gnome-music gnome-photos gnome-terminal
     chroot rootdir apt install -y xserver-xorg xserver-xorg-video-all xserver-xorg-input-all
-    chroot rootdir apt install -y nautilus file-roller eog evince firefox
+    chroot rootdir apt install -y nautilus file-roller eog evince
     ;;
   "plasma")
     echo -e "${GREEN}[INFO]${NC} 安装 KDE Plasma 桌面环境..."
-    chroot rootdir apt install -y plasma-desktop plasma-workspace konsole dolphin kate gwenview firefox sddm
+    chroot rootdir apt install -y plasma-desktop plasma-workspace konsole dolphin kate gwenview sddm
     chroot rootdir apt install -y xserver-xorg xserver-xorg-video-all xserver-xorg-input-all
     ;;
   "xfce")
@@ -145,28 +145,28 @@ case "$DESKTOP_ENV" in
     chroot rootdir apt install -y xfce4 xfce4-goodies xfce4-terminal xfce4-power-manager xfce4-screenshooter xfce4-session xfce4-settings xfce4-panel xfce4-mixer xfce4-whiskermenu-plugin xfce4-taskmanager xfce4-appfinder
     chroot rootdir apt install -y thunar thunar-archive-plugin thunar-media-tags-plugin thunar-volman
     chroot rootdir apt install -y xserver-xorg xserver-xorg-video-all xserver-xorg-input-all
-    chroot rootdir apt install -y firefox lightdm lightdm-gtk-greeter
+    chroot rootdir apt install -y lightdm lightdm-gtk-greeter
     ;;
   "mate")
     echo -e "${GREEN}[INFO]${NC} 安装 MATE 桌面环境..."
-    chroot rootdir apt install -y mate-desktop-environment mate-desktop-environment-extra mate-panel mate-control-center mate-system-tools mate-utils mate-screensaver mate-power-manager mate-polkit mate-indicator-applet mate-media mate-sensors-applet mate-terminal caja pluma
+    chroot rootdir apt install -y mate-desktop-environment mate-panel mate-control-center mate-system-tools mate-utils mate-screensaver mate-power-manager mate-polkit mate-indicator-applet mate-media mate-terminal caja pluma
     chroot rootdir apt install -y xserver-xorg xserver-xorg-video-all xserver-xorg-input-all
     chroot rootdir apt install -y mate-terminal caja pluma
-    chroot rootdir apt install -y firefox lightdm lightdm-gtk-greeter
+    chroot rootdir apt install -y lightdm lightdm-gtk-greeter
     ;;
   "lxqt")
     echo -e "${GREEN}[INFO]${NC} 安装 LXQt 桌面环境..."
-    chroot rootdir apt install -y lxqt-core lxqt-meta lxqt-session lxqt-panel lxqt-runner lxqt-policykit lxqt-powermanagement lxqt-sudo lxqt-about lxqt-config lxqt-globalkeys lxqt-notificationd lxqt-openssh-ui lxqt-policykit lxqt-powermanagement lxqt-qtplugin lxqt-sudo lxqt-trayicon lxqt-wallpaper lxqt-wallet lxqt-webkit
+    chroot rootdir apt install -y lxqt-core lxqt-session lxqt-panel lxqt-runner lxqt-powermanagement lxqt-sudo lxqt-about lxqt-config lxqt-globalkeys lxqt-notificationd lxqt-openssh-ui lxqt-powermanagement lxqt-qtplugin lxqt-sudo lxqt-trayicon lxqt-wallpaper lxqt-wallet
     chroot rootdir apt install -y qterminal pcmanfm-qt leafpad
     chroot rootdir apt install -y xserver-xorg xserver-xorg-video-all xserver-xorg-input-all
-    chroot rootdir apt install -y firefox sddm
+    chroot rootdir apt install -y sddm
     ;;
   "lxde")
     echo -e "${GREEN}[INFO]${NC} 安装 LXDE 桌面环境..."
     chroot rootdir apt install -y lxde lxde-common lxde-icon-theme lxde-common lxterminal pcmanfm lxappearance lxmenu-data lxpolkit
     chroot rootdir apt install -y xserver-xorg xserver-xorg-video-all xserver-xorg-input-all
     chroot rootdir apt install -y lxterminal pcmanfm leafpad
-    chroot rootdir apt install -y firefox lightdm lightdm-gtk-greeter
+    chroot rootdir apt install -y lightdm lightdm-gtk-greeter
     ;;
   "phosh-core"|"phosh-full"|"phosh-phone")
     echo -e "${GREEN}[INFO]${NC} 安装 Phosh 桌面环境..."
