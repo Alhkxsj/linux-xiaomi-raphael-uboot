@@ -60,9 +60,9 @@ sudo sh raphael-kernel-arch_build.sh 6.18
 sudo apt install -y debootstrap arch-install-scripts zstd 7zip
 
 # 构建镜像（需要先下载对应格式的内核包）
-sudo sh debian-desktop_build.sh phosh-full 6.18
-sudo sh ubuntu-desktop_build.sh phosh-full 6.18
-sudo sh arch-desktop_build.sh gnome 6.18
+sudo sh debian-desktop_build.sh 6.18 gnome
+sudo sh ubuntu-desktop_build.sh 6.18 gnome
+sudo sh arch-desktop_build.sh 6.18 gnome
 ```
 
 ## 📦 镜像特性
