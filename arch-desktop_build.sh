@@ -28,22 +28,11 @@ then
 fi
 
 # 获取参数
-DESKTOP_ENV="${1:-gnome}"
+PLACEHOLDER="${1:-}"
 KERNEL_VERSION="${2:-6.18}"
 
 # 验证参数
 validate_params() {
-  # 验证桌面环境
-  case "$DESKTOP_ENV" in
-    gnome|plasma|xfce|mate|lxqt|lxde|none)
-      ;;
-    *)
-      log_error "无效的桌面环境: $DESKTOP_ENV"
-      log_info "支持的桌面环境: gnome, plasma, xfce, mate, lxqt, lxde, none"
-      exit 1
-      ;;
-  esac
-
   # 验证内核版本格式（简单的版本号验证）
   if ! echo "$KERNEL_VERSION" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
     log_error "无效的内核版本格式: $KERNEL_VERSION"

@@ -38,16 +38,55 @@ fi
 # 检查依赖
 check_dependencies
 
+# 获取参数
+KERNEL_VERSION="${1:-6.18}"
+DESKTOP_ENV="${2:-gnome}"
+
+# 验证参数
+validate_params() {
+  # 验证内核版本格式（简单的版本号验证）
+  if ! echo "$KERNEL_VERSION" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
+    echo -e "${RED}[ERROR]${NC} 无效的内核版本格式: $KERNEL_VERSION"
+    echo -e "${GREEN}[INFO]${NC} 正确格式: 6.18 或 6.18.1"
+    exit 1
+  fi
+
+  # 验证桌面环境
+  case "$DESKTOP_ENV" in
+    gnome|plasma|xfce|mate|lxqt|lxde|none|phosh-core|phosh-full|phosh-phone)
+      ;;
+    *)
+      echo -e "${RED}[ERROR]${NC} 无效的桌面环境: $DESKTOP_ENV"
+      echo -e "${GREEN}[INFO]${NC} 支持的桌面环境: gnome, plasma, xfce, mate, lxqt, lxde, none, phosh-core, phosh-full, phosh-phone"
+      exit 1
+      ;;
+  esac
+}
+
+# 验证参数
+validate_params
+
 # 设置 Ubuntu 版本
 UBUNTU_VERSION="noble"
 
+echo "=========================================="
+echo "  Ubuntu 镜像构建"
+echo "=========================================="
+echo -e "${GREEN}[INFO]${NC} 构建配置:"
+echo -e "${GREEN}[INFO]${NC}   桌面环境: $DESKTOP_ENV"
+echo -e "${GREEN}[INFO]${NC}   内核版本: $KERNEL_VERSION"
+echo -e "${GREEN}[INFO]${NC}   开始时间: $(date)"
+echo ""
+
 # 创建根文件系统镜像
+echo -e "${GREEN}[INFO]${NC} 创建根文件系统镜像..."
 truncate -s 6G rootfs.img
 mkfs.ext4 rootfs.img
 mkdir rootdir
 mount -o loop rootfs.img rootdir
 
 # debootstrap生成镜像
+echo -e "${GREEN}[INFO]${NC} 使用 debootstrap 安装系统..."
 debootstrap --arch=arm64 $UBUNTU_VERSION rootdir https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/
 
 # 绑定系统目录
@@ -79,13 +118,54 @@ chroot rootdir apt update
 chroot rootdir apt upgrade -y
 
 # 安装基础软件包
-chroot rootdir apt install -y bash-completion sudo apt-utils ssh openssh-server nano systemd-boot initramfs-tools chrony curl wget dnsmasq iptables iproute2 $1
+chroot rootdir apt install -y bash-completion sudo apt-utils ssh openssh-server nano systemd-boot initramfs-tools chrony curl wget dnsmasq iptables iproute2
 
 # 安装设备特定软件包
 chroot rootdir apt install -y rmtfs protection-domain-mapper tqftpserv
 
 # 安装语言包和设置默认语言为简体中文
 chroot rootdir apt install -y locales locales-all tzdata
+
+# 根据桌面环境参数安装对应的桌面环境
+case "$DESKTOP_ENV" in
+  "gnome")
+    echo -e "${GREEN}[INFO]${NC} 安装 GNOME 桌面环境..."
+    chroot rootdir apt install -y gnome gnome-extra gdm xorg xorg-server xorg-xinit xorg-drivers gnome-terminal gnome-tweaks gnome-system-monitor nautilus file-roller eog evince firefox
+    ;;
+  "plasma")
+    echo -e "${GREEN}[INFO]${NC} 安装 KDE Plasma 桌面环境..."
+    chroot rootdir apt install -y plasma plasma-meta kde-applications xorg xorg-server xorg-xinit xorg-drivers konsole dolphin kate gwenview firefox sddm
+    ;;
+  "xfce")
+    echo -e "${GREEN}[INFO]${NC} 安装 XFCE 桌面环境..."
+    chroot rootdir apt install -y xfce4 xfce4-goodies xorg xorg-server xorg-xinit xorg-drivers xfce4-terminal thunar mousepad firefox lightdm lightdm-gtk-greeter
+    ;;
+  "mate")
+    echo -e "${GREEN}[INFO]${NC} 安装 MATE 桌面环境..."
+    chroot rootdir apt install -y mate mate-extra xorg xorg-server xorg-xinit xorg-drivers mate-terminal caja pluma firefox lightdm lightdm-gtk-greeter
+    ;;
+  "lxqt")
+    echo -e "${GREEN}[INFO]${NC} 安装 LXQt 桌面环境..."
+    chroot rootdir apt install -y lxqt lxqt-meta xorg xorg-server xorg-xinit xorg-drivers qterminal pcmanfm-qt leafpad firefox sddm
+    ;;
+  "lxde")
+    echo -e "${GREEN}[INFO]${NC} 安装 LXDE 桌面环境..."
+    chroot rootdir apt install -y lxde lxde-common xorg xorg-server xorg-xinit xorg-drivers lxterminal pcmanfm leafpad firefox lightdm lightdm-gtk-greeter
+    ;;
+  "phosh-core"|"phosh-full"|"phosh-phone")
+    echo -e "${GREEN}[INFO]${NC} 安装 Phosh 桌面环境..."
+    chroot rootdir apt install -y phosh phosh-core xorg xorg-server xorg-xinit xorg-drivers gnome-terminal gnome-tweaks gnome-system-monitor nautilus file-roller eog evince firefox
+    ;;
+  "none")
+    echo -e "${GREEN}[INFO]${NC} 无桌面环境，仅安装基础系统..."
+    # 不安装任何桌面环境
+    ;;
+  *)
+    echo -e "${RED}[ERROR]${NC} 未知的桌面环境: $DESKTOP_ENV"
+    echo -e "${GREEN}[INFO]${NC} 支持的桌面环境: gnome, plasma, xfce, mate, lxqt, lxde, none, phosh-core, phosh-full, phosh-phone"
+    exit 1
+    ;;
+esac
 chroot rootdir apt install -y \
 	fonts-arphic-uming \
 	language-pack-gnome-zh-hans-base \
