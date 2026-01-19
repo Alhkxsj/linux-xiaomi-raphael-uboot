@@ -13,11 +13,9 @@ on:
         options:
           - debian-desktop
           - debian-minimal
-          - debian-official-desktop
           - debian-server
           - ubuntu-desktop
           - ubuntu-minimal
-          - ubuntu-official-desktop
           - ubuntu-server
           - arch-desktop
           - arch-server
@@ -176,31 +174,25 @@ jobs:
           # 根据系统类型执行对应的构建脚本
           case "${{ env.SYSTEM_TYPE }}" in
             "debian-desktop")
-              sudo sh debian-desktop_build.sh "${{ env.DESKTOP_ENV }}" "${{ env.KERNEL_VERSION }}"
+              sudo sh debian-desktop_build.sh "" "${{ env.KERNEL_VERSION }}" "${{ env.DESKTOP_ENV }}"
               ;;
             "debian-minimal")
               sudo sh debian-minimal_build.sh "${{ env.KERNEL_VERSION }}"
-              ;;
-            "debian-official-desktop")
-              sudo sh debian-official-desktop_build.sh "${{ env.DESKTOP_ENV }}" "${{ env.KERNEL_VERSION }}"
               ;;
             "debian-server")
               sudo sh debian-server_build.sh "${{ env.KERNEL_VERSION }}"
               ;;
             "ubuntu-desktop")
-              sudo sh ubuntu-desktop_build.sh "${{ env.DESKTOP_ENV }}" "${{ env.KERNEL_VERSION }}"
+              sudo sh ubuntu-desktop_build.sh "" "${{ env.KERNEL_VERSION }}" "${{ env.DESKTOP_ENV }}"
               ;;
             "ubuntu-minimal")
               sudo sh ubuntu-minimal_build.sh "${{ env.KERNEL_VERSION }}"
-              ;;
-            "ubuntu-official-desktop")
-              sudo sh ubuntu-official-desktop_build.sh "${{ env.DESKTOP_ENV }}" "${{ env.KERNEL_VERSION }}"
               ;;
             "ubuntu-server")
               sudo sh ubuntu-server_build.sh "${{ env.KERNEL_VERSION }}"
               ;;
             "arch-desktop")
-              sudo sh arch-desktop_build.sh "${{ env.DESKTOP_ENV }}" "${{ env.KERNEL_VERSION }}"
+              sudo sh arch-desktop_build.sh "" "${{ env.KERNEL_VERSION }}" "${{ env.DESKTOP_ENV }}"
               ;;
             "arch-server")
               sudo sh arch-server_build.sh "${{ env.KERNEL_VERSION }}"

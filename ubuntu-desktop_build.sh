@@ -39,8 +39,9 @@ fi
 check_dependencies
 
 # 获取参数
-KERNEL_VERSION="${1:-6.18}"
-DESKTOP_ENV="${2:-gnome}"
+PLACEHOLDER="${1:-}"
+KERNEL_VERSION="${2:-6.18}"
+DESKTOP_ENV="${3:-gnome}"
 
 # 验证参数
 validate_params() {
