@@ -12,8 +12,12 @@ on:
         type: choice
         options:
           - debian-desktop
+          - debian-minimal
+          - debian-official-desktop
           - debian-server
           - ubuntu-desktop
+          - ubuntu-minimal
+          - ubuntu-official-desktop
           - ubuntu-server
           - arch-desktop
           - arch-server
@@ -174,11 +178,23 @@ jobs:
             "debian-desktop")
               sudo sh debian-desktop_build.sh "${{ env.DESKTOP_ENV }}" "${{ env.KERNEL_VERSION }}"
               ;;
+            "debian-minimal")
+              sudo sh debian-minimal_build.sh "${{ env.KERNEL_VERSION }}"
+              ;;
+            "debian-official-desktop")
+              sudo sh debian-official-desktop_build.sh "${{ env.DESKTOP_ENV }}" "${{ env.KERNEL_VERSION }}"
+              ;;
             "debian-server")
               sudo sh debian-server_build.sh "${{ env.KERNEL_VERSION }}"
               ;;
             "ubuntu-desktop")
               sudo sh ubuntu-desktop_build.sh "${{ env.DESKTOP_ENV }}" "${{ env.KERNEL_VERSION }}"
+              ;;
+            "ubuntu-minimal")
+              sudo sh ubuntu-minimal_build.sh "${{ env.KERNEL_VERSION }}"
+              ;;
+            "ubuntu-official-desktop")
+              sudo sh ubuntu-official-desktop_build.sh "${{ env.DESKTOP_ENV }}" "${{ env.KERNEL_VERSION }}"
               ;;
             "ubuntu-server")
               sudo sh ubuntu-server_build.sh "${{ env.KERNEL_VERSION }}"
@@ -207,11 +223,11 @@ jobs:
           
           # 获取系统版本信息
           case "${{ env.SYSTEM_TYPE }}" in
-            "debian-desktop"|"debian-server")
+            "debian-desktop"|"debian-minimal"|"debian-official-desktop"|"debian-server")
               OS_NAME="Debian"
               OS_VERSION="trixie"
               ;;
-            "ubuntu-desktop"|"ubuntu-server")
+            "ubuntu-desktop"|"ubuntu-minimal"|"ubuntu-official-desktop"|"ubuntu-server")
               OS_NAME="Ubuntu"
               OS_VERSION="noble"
               ;;
@@ -266,7 +282,16 @@ jobs:
           DESCRIPTION="${DESCRIPTION}- 构建 ID: ${{ env.BUILD_TIMESTAMP }}\n\n"
           
           # 添加特定说明
-          if [[ "${{ env.SYSTEM_TYPE }}" == *"server"* ]]; then
+          if [[ "${{ env.SYSTEM_TYPE }}" == *"minimal"* ]]; then
+            DESCRIPTION="${DESCRIPTION}说明：\n"
+            DESCRIPTION="${DESCRIPTION}- 这是一个无图形界面的最小化版本\n"
+            DESCRIPTION="${DESCRIPTION}- 包含基础命令行工具\n"
+            DESCRIPTION="${DESCRIPTION}- 已安装 SSH 服务器\n"
+            DESCRIPTION="${DESCRIPTION}- 已安装中文语言支持\n"
+            DESCRIPTION="${DESCRIPTION}- 包含必要的设备驱动和固件\n"
+            DESCRIPTION="${DESCRIPTION}- 开机15秒后自动熄屏\n"
+            DESCRIPTION="${DESCRIPTION}- 命令行输入 'leijun' 关闭屏幕，'jinfan' 打开屏幕\n"
+          elif [[ "${{ env.SYSTEM_TYPE }}" == *"server"* ]]; then
             DESCRIPTION="${DESCRIPTION}说明：\n"
             DESCRIPTION="${DESCRIPTION}- 这是一个无图形界面的服务器版本\n"
             DESCRIPTION="${DESCRIPTION}- 包含基础网络管理工具\n"
