@@ -11,7 +11,7 @@ NC='\033[0m'
 check_dependencies() {
   echo -e "${GREEN}[INFO]${NC} 检查编译依赖..."
   
-  local missing_deps=()
+  missing_deps=""
   
   for cmd in debootstrap truncate mkfs.ext4 wget mount umount cp rm; do
     if ! command -v $cmd >/dev/null 2>&1; then
